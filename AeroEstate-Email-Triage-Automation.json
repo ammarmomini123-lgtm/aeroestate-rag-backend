@@ -1,0 +1,774 @@
+{
+  "name": "AeroEstate-Email-Triage-Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8bac54bd-c7cf-4089-b710-9bb121df56f5",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SCrrj0YVjgkqfo8M",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawContent = $input.first().json.choices[0].message.content;\nconst parsed = JSON.parse(rawContent);\n\nreturn {\n  json: {\n    category: parsed.category,\n    priority: parsed.priority,\n    requires_human: parsed.requires_human,\n    action: parsed.action,\n    reasoning: parsed.reasoning || \"\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        0
+      ],
+      "id": "7f6b5018-78e7-42fa-ae66-6e2f227d7868",
+      "name": "Clean & Extract"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "general_query",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "2cbd1f34-87e1-40cd-9395-2a4960cf6b15"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "RAG Reply"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4c637e2f-358a-43cf-bdd4-049d03835553",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "job_application",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Forward HR"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9fecf50a-b17a-426d-b611-4158fba59d5d",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "project_related",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Forward Manager"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a1706aa0-12ff-483e-bccb-30c21e5658f6",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "meeting_request",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Meeting Request"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "de085289-a10d-407e-b5c8-1f58cfe4f0a3",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "urgent_request",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Urgent Alert"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "52913f71-1452-44f3-95a7-4ed3230b73d8",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "promotional",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Archive / Delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        544,
+        -64
+      ],
+      "id": "2a6e98d1-b449-46df-9dbc-dd546b6fade5",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://pretty-pears-turn.loca.lt//api/rag/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "bypass-tunnel-reminder",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"question\": \"={{ $('Gmail Trigger').item.json.snippet }}\",\n  \"email_sender\": \"{{ $('Gmail Trigger').item.json.From }}\",\n  \"email_subject\": \"{{ $('Gmail Trigger').item.json.Subject }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        960,
+        -592
+      ],
+      "id": "d5ae4706-54fc-4971-9f90-9c5996a7f32a",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "sendTo": "ammar.momini123@gmail.com",
+        "subject": "=={{ \"Fwd: [JOB APPLICATION] \" + $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}",
+        "message": "=<p><strong>🔔 New Candidate Job Application Received</strong></p> <hr> <p><strong>Candidate Email:</strong> {{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'From')?.value }}</p> <p><strong>Subject:</strong> {{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}</p> <p><strong>Priority:</strong> High</p> <hr> <p><strong>Message Snippet:</strong></p> <blockquote>{{ $('Gmail Trigger').item.json.snippet }}</blockquote> <p><em>Automated email triage routing by AeroEstate AI Assistant.</em></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        -416
+      ],
+      "id": "dab290dd-39c6-412b-83b4-8bf1bb251836",
+      "name": "forward to HR",
+      "webhookId": "0d60556b-0c2a-44ec-b3e4-919bae3a725f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SCrrj0YVjgkqfo8M",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ammar.momini123@gmail.com",
+        "subject": "=={{ \"Fwd: [MANAGER ESCALATION] \" + $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}",
+        "message": "=<p><strong>📌 Manager Attention Required: Email Escalation</strong></p> <hr> <p><strong>Sender Email:</strong> {{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'From')?.value }}</p> <p><strong>Subject:</strong> {{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}</p> <p><strong>Category:</strong> {{ $json.category }}</p> <p><strong>Priority:</strong> High</p> <hr> <p><strong>Message Snippet:</strong></p> <blockquote>{{ $('Gmail Trigger').item.json.snippet }}</blockquote> <p><em>Automatically routed to management by AeroEstate AI Assistant.</em></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        -256
+      ],
+      "id": "fb69de49-6e82-44e3-8288-06d7d1c9947a",
+      "name": "forward to Manager",
+      "webhookId": "21e764c9-0adc-454c-bf16-a09e0362ece4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SCrrj0YVjgkqfo8M",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ammar.momini123@gmail.com",
+        "subject": "=={{ \"🚨 [CRITICAL URGENT ALERT] \" + $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}",
+        "message": "=<p><strong style=\"color: red;\">🚨 CRITICAL / URGENT EMAIL ESCALATION</strong></p> <hr> <p><strong>From:</strong> {{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'From')?.value }}</p> <p><strong>Subject:</strong> {{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}</p> <p><strong>Priority Level:</strong> CRITICAL</p> <hr> <p><strong>Email Content Snippet:</strong></p> <blockquote style=\"background-color: #ffe6e6; padding: 10px; border-left: 4px solid red;\">   {{ $('Gmail Trigger').item.json.snippet }} </blockquote> <p><em>This email was flagged as an urgent issue (security, contract, payment, or critical outage) and bypassed AI auto-reply to require immediate human action.</em></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        208
+      ],
+      "id": "6619ffce-750f-4ca5-9465-9052950cacaa",
+      "name": "forward to Leadership",
+      "webhookId": "f684537c-e3ed-4cd4-b3f2-2a8520ee4a3c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SCrrj0YVjgkqfo8M",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🔔 **New Job Application**\n**Candidate:** {{ $('Gmail Trigger').item.json.From.split('<')[0].replace(/\"/g, '').trim() || 'Unknown Candidate' }}\n**Subject:** {{ $('Gmail Trigger').item.json.Subject }}\n**Priority:** {{ $('Clean & Extract').item.json.priority.toUpperCase() }}\n**Action:** {{ $('Clean & Extract').item.json.action || 'Forwarded to HR' }}\n\n*The application email has been successfully forwarded to HR.*",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -416
+      ],
+      "id": "a5cdb736-634a-4c0a-bc48-28fe0044926e",
+      "name": "#hr-alerts",
+      "webhookId": "2f6b0c8c-b928-4371-b885-e5a14d161013",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "vLaSBUJA3snMXwlD",
+          "name": "hr-notifications channel"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=📌 **New Manager Escalation**\n\n**Candidate:** {{ $('Gmail Trigger').item.json.From.split('<')[0].replace(/\"/g, '').trim() || 'Unknown Candidate' }}\n**Subject:** {{ $('Gmail Trigger').item.json.Subject }}\n**Priority:** {{ $('Clean & Extract').item.json.priority.toUpperCase() }}\n**Action:** {{ $('Clean & Extract').item.json.action || 'Forwarded to HR' }}\n\n*Forwarded to Manager for review.*",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -256
+      ],
+      "id": "2517087c-ca74-4ebc-ab73-e789c6185069",
+      "name": "#manager-alerts",
+      "webhookId": "2f6b0c8c-b928-4371-b885-e5a14d161013",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "kKoFuV84GOy3n8oi",
+          "name": "Manager Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🚨 **CRITICAL URGENT ALERT**\n\n**Candidate:** {{ $('Gmail Trigger').item.json.From.split('<')[0].replace(/\"/g, '').trim() || 'Unknown Candidate' }}\n**Subject:** {{ $('Gmail Trigger').item.json.Subject }}\n**Priority:** {{ $('Clean & Extract').item.json.priority.toUpperCase() }}\n**Action:** {{ $('Clean & Extract').item.json.action || 'Forwarded to HR' }}\n\n**Priority:** CRITICAL\n*Immediate human intervention required! Email forwarded to leadership.*",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        208
+      ],
+      "id": "c2da06ea-e436-411c-be2b-43589f8bae0f",
+      "name": "#urgent",
+      "webhookId": "2f6b0c8c-b928-4371-b885-e5a14d161013",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "vpxFfnwWxpS2DQAq",
+          "name": "Urgent Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openai/gpt-oss-120b\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an automated email classifier. Analyze the incoming email and output ONLY valid raw JSON with keys: category, priority, requires_human, action.\\n\\nAllowed category values:\\n- general_query\\n- job_application\\n- project_related\\n- complaint\\n- meeting_request\\n- urgent_request\\n- promotional\\n\\nReturn JSON ONLY.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Subject: {{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value || '' }}\\nFrom: {{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'From')?.value || '' }}\\nBody: {{ $('Gmail Trigger').item.json.snippet }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        176,
+        0
+      ],
+      "id": "8bb302d0-9098-4741-855f-3c53458ec21c",
+      "name": "LLM"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=📅 **Meeting Request Received**\n\n**Candidate:** {{ $('Gmail Trigger').item.json.From.split('<')[0].replace(/\"/g, '').trim() || 'Unknown Candidate' }}\n**Subject:** {{ $('Gmail Trigger').item.json.Subject }}\n**Priority:** {{ $('Clean & Extract').item.json.priority.toUpperCase() }}\n**Action:** {{ $('Clean & Extract').item.json.action || 'Forwarded to HR' }}\n\n*A reply draft has been created in Gmail for human review and approval.*",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        16
+      ],
+      "id": "71e64e53-46ad-46dd-99ad-09fba18ea6b6",
+      "name": "#manager-alerts(meeting)",
+      "webhookId": "2f6b0c8c-b928-4371-b885-e5a14d161013",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "kKoFuV84GOy3n8oi",
+          "name": "Manager Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "message": "=<p>Dear {{ $('Gmail Trigger').item.json.From.split('<')[0].replace(/\"/g, '').trim() }},</p>\n\n<p>Thank you for reaching out to AeroEstate. We have received your meeting request regarding:</p>\n\n<blockquote><em>\"{{ $('Gmail Trigger').item.json.snippet }}\"</em></blockquote>\n\n<p>Our scheduling team is reviewing available calendar slots and will confirm a time with you shortly.</p>\n\n<p>Best regards,<br>\n<strong>AeroEstate Operations Team</strong></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        16
+      ],
+      "id": "b1e96b3e-1b9b-4a4c-8208-aae7f5409441",
+      "name": "Reply to a message1",
+      "webhookId": "c5c99a5b-17fd-4a85-89a9-9971c2165b32",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SCrrj0YVjgkqfo8M",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "TRASH"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        448
+      ],
+      "id": "0f6ca6c8-a13e-4956-8e5f-742c69d0e279",
+      "name": "Label as Trash",
+      "webhookId": "5608bd41-ccb1-476f-b590-250a8982693e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SCrrj0YVjgkqfo8M",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "message": "=<p>Dear {{ $('Gmail Trigger').item.json.From.split('<')[0].replace(/\"/g, '').trim() || 'Valued Client' }},</p>\n\n<p>Thank you for contacting AeroEstate Realty. Here are the details regarding your inquiry:</p>\n\n<div style=\"background-color: #f9f9f9; padding: 15px; border-left: 4px solid #0056b3; margin: 15px 0; font-family: Arial, sans-serif; line-height: 1.6;\">\n  {{ $json.answer }}\n</div>\n\n<p>If you have any further questions or require additional details, please feel free to reply directly to this email.</p>\n\n<p>Best regards,<br>\n<strong>AeroEstate Customer Support Team</strong><br>\nAeroEstate Realty</p>\n\n<hr style=\"border: none; border-top: 1px solid #ddd; margin-top: 20px;\">\n<p style=\"font-size: 12px; color: #777;\"><em>This is an automated response generated by AeroEstate AI Support.</em></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        -592
+      ],
+      "id": "9f10fb91-06b1-4f7d-879e-2497e1d0a155",
+      "name": "Reply(RAG based)",
+      "webhookId": "4f74469d-0263-49da-84eb-e922c4a5931d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SCrrj0YVjgkqfo8M",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "email_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "gmail_message_id",
+              "fieldValue": "=={{ $('Gmail Trigger').item.json.id }}"
+            },
+            {
+              "fieldId": "thread_id",
+              "fieldValue": "=={{ $('Gmail Trigger').item.json.threadId }}"
+            },
+            {
+              "fieldId": "sender",
+              "fieldValue": "={{ $('Gmail Trigger').item.json.From }}"
+            },
+            {
+              "fieldId": "subject",
+              "fieldValue": "={{ $('Gmail Trigger').item.json.Subject }}"
+            },
+            {
+              "fieldId": "snippet",
+              "fieldValue": "=={{ $('Gmail Trigger').item.json.snippet }}"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "={{ $('Clean & Extract').item.json.category }}"
+            },
+            {
+              "fieldId": "priority",
+              "fieldValue": "={{ $('Clean & Extract').item.json.priority }}"
+            },
+            {
+              "fieldId": "requires_human",
+              "fieldValue": "={{ $('Clean & Extract').item.json.requires_human }}"
+            },
+            {
+              "fieldId": "action_taken",
+              "fieldValue": "={{ $('Clean & Extract').item.json.action }}"
+            },
+            {
+              "fieldId": "rag_answer",
+              "fieldValue": "=={{ $('HTTP Request').isExecuted ? $('HTTP Request').item.json.answer : '' }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        -96
+      ],
+      "id": "5a4ac9c3-5513-4dc3-8e17-be6dc9b40c71",
+      "name": "saving logs",
+      "credentials": {
+        "supabaseApi": {
+          "id": "MLqNr2hTaSM0aIlg",
+          "name": "DevSynt-Hiring-Automation"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean & Extract": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "forward to HR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "forward to Manager",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply to a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "forward to Leadership",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Label as Trash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "forward to HR": {
+      "main": [
+        [
+          {
+            "node": "#hr-alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "forward to Manager": {
+      "main": [
+        [
+          {
+            "node": "#manager-alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "forward to Leadership": {
+      "main": [
+        [
+          {
+            "node": "#urgent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Reply(RAG based)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "#hr-alerts": {
+      "main": [
+        [
+          {
+            "node": "saving logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "#manager-alerts": {
+      "main": [
+        [
+          {
+            "node": "saving logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "#urgent": {
+      "main": [
+        [
+          {
+            "node": "saving logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM": {
+      "main": [
+        [
+          {
+            "node": "Clean & Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "#manager-alerts(meeting)": {
+      "main": [
+        [
+          {
+            "node": "saving logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message1": {
+      "main": [
+        [
+          {
+            "node": "#manager-alerts(meeting)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label as Trash": {
+      "main": [
+        [
+          {
+            "node": "saving logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply(RAG based)": {
+      "main": [
+        [
+          {
+            "node": "saving logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "43773a5a-25c8-4582-a5bf-918ad5ec4c46",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a43ba6ffa629bfe2f101c7e4da7a5a47473018eb1082a0893602a03c970dc3cc"
+  },
+  "nodeGroups": [],
+  "id": "S5IwgpET4BNY5DiD",
+  "tags": []
+}

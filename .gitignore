@@ -1,0 +1,27 @@
+# Environments & API Keys (CRITICAL FOR SECURITY)
+.env
+.venv/
+venv/
+ENV/
+
+# Python Cache & Compiled Files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local Data & Vector Database Storage
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/vector_db/*
+!data/vector_db/.gitkeep
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
