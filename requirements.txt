@@ -1,7 +1,8 @@
 fastapi
 uvicorn
-langchain
-langchain-core
 pydantic
 chromadb
+langchain
+langchain-core
+langchain-groq
 python-dotenv
