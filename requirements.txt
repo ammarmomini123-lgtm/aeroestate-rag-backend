@@ -5,4 +5,6 @@ chromadb
 langchain
 langchain-core
 langchain-groq
+sentence-transformers
+torch
 python-dotenv
