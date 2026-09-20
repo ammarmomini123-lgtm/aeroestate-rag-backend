@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Any
-from app.pipelines.rag_pipeline import RAGPipeline
 
 app = FastAPI(
     title="AeroEstate RAG API",
@@ -9,10 +8,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Initialize RAG pipeline once at app startup
-rag_pipeline = RAGPipeline()
-
-
+# Pydantic Schemas
 class QueryRequest(BaseModel):
     question: str
     email_sender: Optional[str] = None
@@ -25,8 +21,23 @@ class QueryResponse(BaseModel):
     status: str
 
 
+# Global instance for lazy loading RAG Pipeline
+rag_pipeline_instance = None
+
+
+def get_rag_pipeline():
+    global rag_pipeline_instance
+    if rag_pipeline_instance is None:
+        print("⏳ Lazy loading RAG Pipeline into memory...")
+        from app.pipelines.rag_pipeline import RAGPipeline
+        rag_pipeline_instance = RAGPipeline()
+        print("✅ RAG Pipeline loaded successfully.")
+    return rag_pipeline_instance
+
+
 @app.get("/")
 def health_check():
+    # Returns 200 OK instantly so Render detects the open port immediately
     return {"status": "healthy", "service": "AeroEstate RAG Engine"}
 
 
@@ -42,8 +53,9 @@ def handle_rag_query(payload: QueryRequest):
 
         print(f"📩 Processing RAG query from email [{payload.email_sender}]: '{payload.question}'")
 
-        # Run Task 5 RAG pipeline
-        result = rag_pipeline.run(payload.question)
+        # Lazy load pipeline on first request
+        pipeline = get_rag_pipeline()
+        result = pipeline.run(payload.question)
 
         answer_text = result.get("answer", "Information not found in knowledge base.")
         raw_context = result.get("context", [])
@@ -55,11 +67,9 @@ def handle_rag_query(payload: QueryRequest):
                 if isinstance(item, str):
                     context_strings.append(item)
                 elif isinstance(item, dict):
-                    # Extract text content if key exists, otherwise convert whole dict to string
                     text_content = item.get("text") or item.get("page_content") or item.get("content") or str(item)
                     context_strings.append(str(text_content))
                 else:
-                    # Handle LangChain Document or custom objects
                     page_content = getattr(item, "page_content", str(item))
                     context_strings.append(str(page_content))
         elif raw_context:
