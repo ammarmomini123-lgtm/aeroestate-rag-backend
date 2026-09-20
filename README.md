@@ -5,6 +5,7 @@ An end-to-end automated email processing pipeline built using **n8n**, **Groq LL
 The system automatically classifies incoming customer emails, generates grounded RAG (Retrieval-Augmented Generation) responses for general inquiries, routes job applications to HR, creates drafts for meeting requests, and logs all transactional metadata to Supabase in real time.
 
 **project Link**: https://drive.google.com/drive/folders/1gdm9BWa4miZHM8x3gykxjh9oVbemcEIS?usp=sharing
+
 **LinkedIn Post**: https://lnkd.in/p/dV4PRgqK
 
 ---
